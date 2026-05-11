@@ -3,86 +3,47 @@ version: "3.8"
 services:
 
   frontend:
-    build: ./frontend
+    image: fullstack-frontend:latest
     environment:
       - REACT_APP_API_URL=http://localhost/api
-    depends_on:
-      - backend
     networks:
       - frontend-network
 
   backend:
-    build: ./backend
+    image: fullstack-backend:latest
     environment:
-      - NODE_ENV=development
-      - PORT=3000
+      - NODE_ENV=production
+      - LOG_LEVEL=error
       - MONGODB_URI=mongodb://mongo:27017/todoapp
       - REDIS_URL=redis://redis:6379
-      - CORS_ORIGIN=http://localhost
-      - MAX_FILE_SIZE=5242880
-    volumes:
-      - ./backend/uploads:/app/uploads
-      - ./backend/logs:/app/logs
-    depends_on:
-      mongo:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+      - ENABLE_METRICS=true
     networks:
       - backend-network
       - frontend-network
 
   mongo:
     image: mongo:6
-    restart: always
     volumes:
-      - mongo-data:/data/db
-    healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.runCommand('ping')"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      - mongo_data:/data/db
     networks:
       - backend-network
 
   redis:
     image: redis:7-alpine
-    command: redis-server --appendonly yes
-    volumes:
-      - redis-data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
     networks:
       - backend-network
 
   nginx:
     image: nginx:alpine
-    restart: unless-stopped
     ports:
       - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx/nginx-ssl.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/ssl:/etc/nginx/ssl:ro
-    depends_on:
-      - frontend
-      - backend
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
     networks:
       - frontend-network
       - backend-network
 
 volumes:
-  mongo-data:
-  redis-data:
+  mongo_data:
 
 networks:
   frontend-network:
-  backend-networ
+  backend-network:

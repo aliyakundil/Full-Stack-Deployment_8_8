@@ -2,6 +2,7 @@ import express from "express";
 import mongoose from "mongoose";
 import helmet from "helmet";
 import cors from "cors";
+import path from "path";
 import rateLimit from "express-rate-limit";
 import { redisClient, connectRedis } from "./config/redis.js";
 import dotenv from "dotenv";
@@ -52,7 +53,14 @@ app.get('/health', (req, res) => {
   })
 });
 
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
+
 app.use("/api", todoRoutes);
+
+// Prometheus endpoint in backend
+app.get('/metrics', (req, res) => {
+  res.send("metrics here");
+});
 
 app.use(notFoundHandler);
 app.use(errorHandler);
